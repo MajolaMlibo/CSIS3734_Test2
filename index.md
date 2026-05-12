@@ -448,8 +448,11 @@ currency.info()
 # Statistical summary
 currency.describe()
 
-# Unique values per feature
+# Number of unique values per feature
 currency.nunique()
+
+# value of unique values per feature
+dfcus['marital'].unique()
 ```
 
 #### 2.3.1 Discussion of data inspection *(5 marks)*
