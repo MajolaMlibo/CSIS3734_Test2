@@ -1,10 +1,15 @@
+
 # Test 2 Solutions
 ---
+
 [2025](#2025-paper-solutions)
 [2024](#2024-paper-solutions)
 
+---
 
-# 2025 PAPER SOLUTIONS
+
+[Back To Top](#test-2-solutions)
+# 2025 PAPER **SOLUTIONS**
 **Date:** 14 May 2025 | **Time:** 180 min | **Total Marks:** 90
 ---
 
@@ -401,7 +406,7 @@ print("""
 
 ---
 ---
-
+[Back To Top](#test-2-solutions)
 # 2024 PAPER SOLUTIONS
 **Date:** 22 May 2024 | **Time:** 180 min | **Total Marks:** 90S
 ---
