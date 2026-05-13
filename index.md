@@ -27,9 +27,17 @@
 
 ```python
 import pandas as pd
+import pandas as pd
+import numpy as np
+import seaborn as sns
+
+import matplotlib.pyplot as plt
+%matplotlib inline
+
+from sklearn.preprocessing import LabelEncoder
 
 customers = pd.read_csv('credit_card_customers.csv')
-customers
+customers.head()
 ```
 
 ---
@@ -38,7 +46,8 @@ customers
 
 ```python
 # Row count and column count
-print(f"Rows: {customers.shape[0]}, Columns: {customers.shape[1]}")
+print(f"Number of rows: {credf.shape[0]} ")
+print(f"Number of columns: {credf.shape[1]} ")
 
 # Last 20 records
 customers.tail(20)
@@ -50,14 +59,30 @@ customers.dtypes
 customers.nunique()
 ```
 
+```python
+# Unique values per feature
+print(f"Arrition Flag: {credf['Attrition_Flag'].unique()} \n")
+print(f"Education Level: {credf['Education_Level'].unique()} \n")
+print(f"Marital Status: {credf['Marital_Status'].unique()} \n")
+print(f"Income Category: {credf['Income_Category'].unique()} \n")
+print(f"Card Category: {credf['Card_Category'].unique()} \n")
+print(f"Gender: {credf['Gender'].unique()} \n")
+
+print(f"Arrition Flag: {credf['CLIENTNUM'].unique()} \n")
+print(f"Arrition Flag: {credf['Customer_Age'].unique()} \n")
+print(f"Arrition Flag: {credf['Dependent_count'].unique()} \n")
+print(f"Arrition Flag: {credf['Months_on_book'].unique()} \n")
+print(f"Arrition Flag: {credf['Credit_Limit'].unique()} \n")
+```
+
 ---
 
 ### 2.3 Discard first and last 7 columns *(2 marks)*
 
 ```python
-# Without specifying column names — use iloc indexing
-customers = customers.iloc[:, 7:-7]
-customers
+# Discards the last seven columns and the first
+subset_customers = customers.iloc[:, 1:-7]
+subset_customers
 
 or 
 
@@ -89,7 +114,8 @@ has more available credit to use.
 ```python
 df_encoded = pd.get_dummies(customers, columns=['Gender'])
 customers['Education_Level'] = customers['Education_Level'].astype('category').cat.codes
-customers.describe()
+
+subset_credf.describe(include = 'all')
 ```
 > **💡 Explanation:** `df_encoded` One-Hot Encoding (Best for nominal data): This creates a new binary (0 or 1) column for every unique category. Use pandas.get_dummies() to achieve this. 
 > 
@@ -145,9 +171,9 @@ import matplotlib.pyplot as plt
 
 # Plot 1: Category plot – Customers per Card Category for each Education Level
 plt.figure(figsize=(12,6))
-sns.countplot(data=customers, x='Education_Level', hue='Card_Category')
+sns.catplot(data = subset_credf, x='Education_Level',hue='Card_Category',kind="count",palette="ch:25")
 plt.title('Number of Customers per Card Category for Each Education Level')
-plt.xticks(rotation=45)
+plt.xticks(rotation = 45)
 plt.tight_layout()
 plt.show()
 print("""
@@ -170,11 +196,12 @@ available credit to spend, assuming the same balance owed.
 """)
 
 # Plot 3: Combined scatter plot – Income Category vs Credit Limit per Card Category
-plt.figure(figsize=(10,6))
-sns.scatterplot(data=customers, x='Income_Category', y='Credit_Limit', hue='Card_Category')
-plt.title('Income Category vs Credit Limit by Card Category')
+sns.catplot(data=customers, x='Income_Category', y='Credit_Limit', 
+            hue='Card_Category', kind='strip', aspect=2, jitter=0.25)
+
+# Improve layout
 plt.xticks(rotation=45)
-plt.tight_layout()
+plt.title("Income Category vs. Credit Limit by Card Tier")
 plt.show()
 print("""
 Discussion: Customers in higher income brackets tend to have higher credit limits. 
@@ -255,7 +282,7 @@ plt.show()
 
 ---
 
-### 2.12 Convert text to numeric values *(7 marks)*
+### 2.12 Convert text to numeric values Versions 1*(7 marks)*
 
 ```python
 from sklearn.preprocessing import LabelEncoder
@@ -278,6 +305,32 @@ customers_resampled = pd.get_dummies(customers_resampled, columns=multi_cols, dr
 
 print("One-hot encoded columns:", multi_cols)
 customers_resampled
+```
+
+---
+
+### 2.12 Convert text to numeric values Versions 2*(7 marks)*
+
+```python
+from sklearn.preprocessing import LabelEncoder
+
+label_Encoder = LabelEncoder()
+
+customers_resampled['Attrition_Flag'] = label_Encoder.fit_transform(customers_resampled['Attrition_Flag'])
+customers_resampled['Gender'] = label_Encoder.fit_transform(customers_resampled['Gender'])
+
+
+customers_resampled.head()
+
+eduLevel_vectors = pd.get_dummies(customers_resampled['Education_Level'],dtype=int)
+marital_status_vectors = pd.get_dummies(customers_resampled['Marital_Status'],dtype=int)
+card_Category_vectors = pd.get_dummies(customers_resampled['Card_Category'],dtype=int)
+IncomeCategory_vectors = pd.get_dummies(customers_resampled['Income_Category'],dtype=int)
+
+customers_resampled.drop(['Education_Level','Marital_Status','Card_Category','Income_Category'],axis=1,inplace=True)
+customers_resampled= pd.concat([customers_resampled,eduLevel_vectors,marital_status_vectors,card_Category_vectors,IncomeCategory_vectors],axis=1)
+customers_resampled.head()
+
 ```
 
 ---
@@ -312,40 +365,53 @@ X_test = scaler.transform(X_test)
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
-from sklearn.model_selection import cross_val_score, learning_curve
-import numpy as np
-import matplotlib.pyplot as plt
 
-classifiers = {
-    'KNN': KNeighborsClassifier(),
-    'Logistic Regression': LogisticRegression(),
-    'SVM': SVC(gamma='auto')
-}
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import learning_curve
 
-k = 5
-results = {}
+from sklearn.metrics import f1_score
+from sklearn.metrics import make_scorer
 
-for name, clf in classifiers.items():
-    acc_scores = cross_val_score(clf, X_train, y_train, cv=k, scoring='accuracy')
-    f1_scores  = cross_val_score(clf, X_train, y_train, cv=k, scoring='f1_weighted')
-    results[name] = {'accuracy': acc_scores.mean(), 'f1': f1_scores.mean()}
-    print(f"{name}:")
-    print(f"  CV Training Accuracy: {acc_scores.mean():.4f} (+/- {acc_scores.std():.4f})")
-    print(f"  CV F1 Score:          {f1_scores.mean():.4f} (+/- {f1_scores.std():.4f})\n")
+models = []
 
-# Learning curves for each classifier
-for name, clf in classifiers.items():
-    train_sizes, train_scores, val_scores = learning_curve(
-        clf, X_train, y_train, cv=k, scoring='accuracy',
-        train_sizes=np.linspace(0.1, 1.0, 10), random_state=42
-    )
-    plt.figure(figsize=(8,5))
-    plt.plot(train_sizes, train_scores.mean(axis=1), label='Training Score', linestyle='--')
-    plt.plot(train_sizes, val_scores.mean(axis=1),   label='Cross-validation Score')
-    plt.title(f'Learning Curve – {name}')
-    plt.xlabel('Training Set Size')
-    plt.ylabel('Accuracy Score')
-    plt.legend()
+models.append(('KNN',KNeighborsClassifier()))
+models.append(('LR',LogisticRegression(max_iter=1000)))
+models.append(('SVC',SVC(gamma='auto')))
+
+
+results = []
+names =[]
+
+f1 = make_scorer(f1_score,average = 'weighted')
+
+for name,model in models:
+    kfold =KFold(n_splits = 5,random_state=13,shuffle= True)
+    cv_results = cross_val_score(model,X_train,y_train,cv=kfold,scoring='accuracy')
+    results.append(cv_results)
+    names.append(name)
+    msg='%s(acc): %f (%f)' % (name,cv_results.mean(),cv_results.std())
+    print(msg)
+    cv_results = cross_val_score(model, X_train, y_train, cv = kfold, scoring = f1)
+    results.append(cv_results)
+    names.append(name)
+    msg = '%s(f1): %f (%f)' % (name, cv_results.mean(), cv_results.std())
+    print(msg)
+    train_sizes, train_scores, validation_scores = learning_curve(estimator = model,
+                                                              X = X_train,
+                                                              y = y_train,
+                                                              train_sizes = np.linspace(0.01, 1.0, 20),
+                                                              cv = kfold,
+                                                              scoring = 'accuracy', shuffle = True)
+    mean_training = np.mean(train_scores, axis=1)
+    mean_testing = np.mean(validation_scores, axis=1)
+
+
+    
+    plt.plot(train_sizes, mean_training, '--', color = "b",  label = "Training score")
+    plt.plot(train_sizes, mean_testing, color = "g", label = "Cross-validation score")
+    plt.title(f"Learning Curve for the " + name + " Classifier")
+    plt.xlabel("Training Set Size"), plt.ylabel("Accuracy Score"), plt.legend(loc = "best")
     plt.tight_layout()
     plt.show()
 ```
@@ -370,6 +436,20 @@ print("\nConfusion Matrix:")
 print(confusion_matrix(y_test, y_pred))
 print("\nClassification Report:")
 print(classification_report(y_test, y_pred))
+
+##OR
+
+from sklearn import metrics
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
+
+model = LogisticRegression(max_iter = 1000)
+model.fit(X_train,y_train)
+predictions = model.predict(X_test)
+
+print(metrics.accuracy_score(predictions,y_test))
+print(confusion_matrix(y_test,predictions))
+print(classification_report(y_test,predictions))
 ```
 
 ---
