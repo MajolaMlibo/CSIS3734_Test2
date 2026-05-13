@@ -475,7 +475,7 @@ print("""
 3. Recall:
    Recall measures the proportion of actual positives that were correctly 
    identified: TP / (TP + FN). A high recall means the model correctly 
-   identifies most customers who will actually leave (few false negatives).
+   identifies **most** customers who will actually leave (few false negatives).
 
 4. F1-Score:
    The F1-score is the harmonic mean of precision and recall: 
@@ -490,7 +490,6 @@ print("""
 ---
 [Back To Top](#test-2-solutions)
 # 2024 PAPER SOLUTIONS
-**Date:** 22 May 2024 | **Time:** 180 min | **Total Marks:** 90S
 ---
 
 ## QUESTION 2 [50 Marks – 100 Minutes] *(Open Book)*
@@ -505,9 +504,19 @@ print("""
 
 ```python
 import pandas as pd
+import numpy as np
+import pandas as pd
+import seaborn as sns
+
+import matplotlib.pyplot as plt
+%matplotlib inline
+
+from sklearn.preprocessing import LabelEncoder
+```
+```python
 
 currency = pd.read_csv('fake_currency_data.csv')
-currency
+currency.head()
 ```
 
 ---
@@ -516,7 +525,7 @@ currency
 
 ```python
 currency.rename(columns={'Country': 'CountryOfOrigin'}, inplace=True)
-currency
+currency.head()
 ```
 
 ---
@@ -528,13 +537,14 @@ currency
 currency.info()
 
 # Statistical summary
-currency.describe()
+currency.describe(include = 'all')
 
 # Number of unique values per feature
 currency.nunique()
 
 # value of unique values per feature
-dfcus['marital'].unique()
+dfcus.unique()
+dfcus['column_name'].unique()
 ```
 
 #### 2.3.1 Discussion of data inspection *(5 marks)*
@@ -573,12 +583,12 @@ Possible issues:
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-features = ['Weight', 'Length', 'Width', 'Thickness']
+cols = ['Weight(mg)','Length(mm)','Width(mm)','Thickness(mm)']
 
-fig, axes = plt.subplots(1, 4, figsize=(16,5))
-for ax, feat in zip(axes, features):
-    sns.boxplot(y=currency[feat], ax=ax)
-    ax.set_title(feat)
+for i,col in enumerate(cols):
+    sns.boxplot(y=currency[col], ax =axes[i], color ='skyblue')
+    axes[i].set_title(f'box plot of {col}')
+
 plt.tight_layout()
 plt.show()
 ```
@@ -597,7 +607,7 @@ and degrade classification performance.
 #### 2.4.2 Fix the issue *(3 marks)*
 
 ```python
-# Fix: Remove outliers using the IQR method
+# Remove outliers using the IQR method
 from scipy import stats
 import numpy as np
 
@@ -645,7 +655,7 @@ counts = currency['Counterfeit'].value_counts()
 pct = (counts / counts.sum() * 100).round(1)
 
 plt.figure(figsize=(6,6))
-plt.pie(pct, labels=pct.index, autopct='%.1f%%')
+plt.pie(pct, labels=pct.index, autopct='%.1f%%', startangle=90)
 plt.title('Counterfeit vs Genuine Currency Distribution')
 plt.show()
 ```
@@ -687,6 +697,26 @@ multi_cols = [col for col in currency.select_dtypes(include='object').columns
 currency = pd.get_dummies(currency, columns=multi_cols, drop_first=False)
 print("One-hot encoded:", multi_cols)
 currency
+
+#OR
+
+print(f"Country of origin: {currency_clean['CountryOfOrigin'].unique()} \n")
+print(f"Counterfeit: {currency_clean['Counterfeit'].unique()}\n")
+print(f"Security Features: {currency_clean['SecurityFeatures'].unique()}\n")
+print(f"Denomination: {currency_clean['Denomination'].unique()}\n")
+
+label_Encoder = LabelEncoder()
+
+currency_clean['Counterfeit'] = label_Encoder.fit_transform(currency_clean['Counterfeit'])
+
+country_vectors = pd.get_dummies(currency_clean['CountryOfOrigin'], dtype=int)
+security_vectors = pd.get_dummies(currency_clean['SecurityFeatures'], dtype=int)
+demonimation_vectors =pd.get_dummies(currency_clean['Denomination'], dtype=int)
+currency_clean_reduced = pd.concat([currency_clean, country_vectors, security_vectors,demonimation_vectors], axis = 1)
+
+#It is important that the student drop the relevant columns after the vector space has been created or lose 1 mark
+currency_clean_reduced.drop(['SecurityFeatures', 'CountryOfOrigin','Denomination'], axis = 1, inplace = True) 
+currency_clean_reduced.head(10)
 ```
 
 ---
